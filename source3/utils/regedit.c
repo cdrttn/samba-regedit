@@ -18,21 +18,50 @@
  */
 
 #include "includes.h"
+#include "popt_common.h"
 #include "lib/util/data_blob.h"
 #include "lib/registry/registry.h"
 #include "regedit.h"
 
-int main()
+int main(int argc, char **argv)
 {
+	struct poptOption long_options[] = {
+		POPT_AUTOHELP
+		/* ... */
+		POPT_COMMON_SAMBA
+		POPT_COMMON_CONNECTION
+		POPT_COMMON_CREDENTIALS
+		POPT_TABLEEND
+	};
+	int opt;
+	poptContext pc;
+	struct user_auth_info *auth_info;
+	TALLOC_CTX *frame;
 	struct registry_context *ctx;
 	struct registry_key *hklm;
 	struct registry_key *smbconf;
 	uint32_t n;
 	WERROR rv;
 
-	/* some simple tests */
+	frame = talloc_stackframe();
 
+	setup_logging("regedit", DEBUG_DEFAULT_STDERR);
+	lp_set_cmdline("log level", "0");
 	lp_load_global(get_dyn_CONFIGFILE());
+
+	/* process options */
+	auth_info = user_auth_info_init(frame);
+	if (auth_info == NULL) {
+		exit(1);
+	}
+	popt_common_set_auth_info(auth_info);
+	pc = poptGetContext("regedit", argc, (const char **)argv, long_options, 0);
+
+	while ((opt = poptGetNextOpt(pc)) != -1) {
+		/* TODO */
+	}
+
+	/* some simple tests */
 	
 	rv = reg_open_samba3(&ctx);
 	SMB_ASSERT(W_ERROR_IS_OK(rv));
@@ -61,6 +90,7 @@ int main()
 	}	
 
 	TALLOC_FREE(ctx);
+	TALLOC_FREE(frame);
 
 	return 0;
 }
