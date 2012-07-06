@@ -201,7 +201,7 @@ static struct registry_operations reg_backend_s3 = {
 	.get_key_info = samba3_get_info,
 };
 
-WERROR reg_open_samba3(TALLOC_CTX *mem_ctx, struct registry_context **ctx)
+WERROR reg_open_samba3(struct registry_context **ctx)
 {
 	WERROR rv;
 	struct samba3_registry_context *rctx;
@@ -212,10 +212,8 @@ WERROR reg_open_samba3(TALLOC_CTX *mem_ctx, struct registry_context **ctx)
 		return rv;
 	}
 
-	rctx = talloc_zero(mem_ctx, struct samba3_registry_context);
-	if (rctx == NULL) {
-		return WERR_NOMEM;
-	}
+	rctx = talloc_zero(NULL, struct samba3_registry_context);
+	W_ERROR_HAVE_NO_MEMORY(rctx);
 
 	*ctx = (struct registry_context *)rctx;
 	(*ctx)->ops = &reg_backend_s3;
