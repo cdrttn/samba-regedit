@@ -1,39 +1,37 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <ncurses.h>
-#include <menu.h>
+/*
+ * Samba Unix/Linux SMB client library
+ * Registry Editor
+ * Copyright (C) Christopher Davis 2012
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-struct tree_node {
+#include "regedit_treeview.h"
 
-	char *name;
-	char *label;
-	
-	struct tree_node *parent;
-	struct tree_node *child_head;
-	struct tree_node *previous;
-	struct tree_node *next;
-};
-
-struct tree_view {
-	
-	struct tree_node *root;
-	WINDOW *window;
-	WINDOW *sub_window;
-	MENU *menu;
-	ITEM **current_items;
-};
-
-struct tree_node *tree_node_new(struct tree_node *parent, const char *name)
+struct tree_node *tree_node_new(TALLOC_CTX *ctx, struct tree_node *parent, const char *name)
 {
 	struct tree_node *node;
 
-	node = calloc(1, sizeof(struct tree_node));
-	if (node == NULL)
+	node = talloc_zero(ctx, struct tree_node);
+	if (!node) {
 		return NULL;
+	}
 
-	node->name = strdup(name);
+	node->name = talloc_strdup(ctx, name);
+	if (!node->name) {
+		return NULL;
+	}
 
 	if (parent) {
 		/* Check if this node is the first descendant of parent. */
@@ -95,13 +93,14 @@ struct tree_node *tree_node_first(struct tree_node *list)
 	return list;
 }
 
+/* XXX consider talloc destructors */
 void tree_node_free(struct tree_node *node)
 {
-	assert(node->child_head == NULL);
-	assert(node->next == NULL);
-	assert(node->previous == NULL);
-	free(node->name);
-	free(node);
+	SMB_ASSERT(node->child_head == NULL);
+	SMB_ASSERT(node->next == NULL);
+	SMB_ASSERT(node->previous == NULL);
+	talloc_free(node->name);
+	talloc_free(node);
 }
 
 void tree_node_free_recursive(struct tree_node *list)
@@ -121,7 +120,7 @@ void tree_node_free_recursive(struct tree_node *list)
 	}
 }
 
-void tree_view_free_current_items(struct tree_view *view)
+static void tree_view_free_current_items(struct tree_view *view)
 {
 	size_t i;
 	struct tree_node *tmp;
@@ -135,16 +134,16 @@ void tree_view_free_current_items(struct tree_view *view)
 		item = view->current_items[i];
 		tmp = item_userptr(item);
 		if (tmp && tmp->label) {
-			free(tmp->label);
+			talloc_free(tmp->label);
 			tmp->label = NULL;
 		}
 		free_item(item);
 	}
-	free(view->current_items);
+	talloc_free(view->current_items);
 	view->current_items = NULL;
 }
 
-void tree_view_update(struct tree_view *view, struct tree_node *list)
+WERROR tree_view_update(TALLOC_CTX *ctx, struct tree_view *view, struct tree_node *list)
 {
 	ITEM **items;
 	struct tree_node *tmp;
@@ -156,18 +155,18 @@ void tree_view_update(struct tree_view *view, struct tree_node *list)
 	for (n_items = 0, tmp = list; tmp != NULL; tmp = tmp->next) {
 		n_items++;
 	}
-	items = calloc(n_items + 1, sizeof(ITEM **));
-
+	items = talloc_zero_array(ctx, ITEM **, n_items + 1);
+	W_ERROR_HAVE_NO_MEMORY(items);
+	
 	for (i = 0, tmp = list; tmp != NULL; ++i, tmp = tmp->next) {
 		const char *label = tmp->name;
 
 		/* Add a '+' marker to indicate that the item has
 		   descendants. */
 		if (tmp->child_head) {
-			char buf[32];
-			snprintf(buf, sizeof(buf), "+%s", tmp->name);
-			assert(tmp->label == NULL);
-			tmp->label = strdup(buf);
+			SMB_ASSERT(tmp->label == NULL);
+			tmp->label = talloc_asprintf(ctx, "+%s", tmp->name);
+			W_ERROR_HAVE_NO_MEMORY(tmp->label);
 			label = tmp->label;
 		}
 
@@ -175,11 +174,12 @@ void tree_view_update(struct tree_view *view, struct tree_node *list)
 		set_item_userptr(items[i], tmp);
 	}
 
-
 	unpost_menu(view->menu);
 	set_menu_items(view->menu, items);
 	tree_view_free_current_items(view);
 	view->current_items = items;
+
+	return WERR_OK;
 }
 
 void tree_view_show(struct tree_view *view)
@@ -188,18 +188,25 @@ void tree_view_show(struct tree_view *view)
 	wrefresh(view->window);
 }
 
-struct tree_view *tree_view_new(struct tree_node *root, WINDOW *orig,
-	int nlines, int ncols, int begin_y, int begin_x)
+struct tree_view *tree_view_new(TALLOC_CTX *ctx, struct tree_node *root,
+	WINDOW *orig, int nlines, int ncols, int begin_y, int begin_x)
 {
 	struct tree_view *view;
 	static const char *dummy = "12345";
 	
-	view = calloc(1, sizeof(struct tree_view));
+	view = talloc_zero(ctx, struct tree_view);
+	if (view == NULL) {
+		return NULL;
+	}
+
 	view->window = orig;
 	view->sub_window = derwin(orig, nlines, ncols, begin_y, begin_x);
 	view->root = root;
 
-	view->current_items = calloc(2, sizeof(ITEM **));
+	view->current_items = talloc_zero_array(ctx, ITEM **, 2);
+	if (view->current_items == NULL) {
+		return NULL;
+	}
 	view->current_items[0] = new_item(dummy, dummy);
 
 	view->menu = new_menu(view->current_items);
@@ -209,7 +216,7 @@ struct tree_view *tree_view_new(struct tree_node *root, WINDOW *orig,
 	menu_opts_off(view->menu, O_SHOWDESC);
 	set_menu_mark(view->menu, "* ");
 
-	tree_view_update(view, root);
+	tree_view_update(ctx, view, root);
 
 	return view;
 }
@@ -222,7 +229,7 @@ void tree_view_free(struct tree_view *view)
 	tree_node_free_recursive(view->root);
 }
 
-void print_path_recursive(WINDOW *label, struct tree_node *node)
+static void print_path_recursive(WINDOW *label, struct tree_node *node)
 {
 	if (node->parent)
 		print_path_recursive(label, node->parent);
@@ -230,7 +237,8 @@ void print_path_recursive(WINDOW *label, struct tree_node *node)
 	wprintw(label, "%s/", node->name);
 }
 
-void print_path(WINDOW *label, struct tree_node *node)
+/* print the path of node to label */
+void tree_node_print_path(WINDOW *label, struct tree_node *node)
 {
 	if (node == NULL)
 		return;
