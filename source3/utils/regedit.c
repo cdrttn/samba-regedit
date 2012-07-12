@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
 	/* some simple tests */
 	
-	rv = reg_open_samba3(&ctx);
+	rv = reg_open_samba3(frame, &ctx);
 	SMB_ASSERT(W_ERROR_IS_OK(rv));
 
 	rv = reg_get_predefined_key_by_name(ctx, "HKEY_LOCAL_MACHINE", &hklm);
@@ -94,7 +94,6 @@ int main(int argc, char **argv)
 		printf("%u: %s\n", (unsigned)n, name);
 	}	
 
-	TALLOC_FREE(ctx);
 	TALLOC_FREE(frame);
 
 	return 0;
