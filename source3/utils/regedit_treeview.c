@@ -28,8 +28,9 @@ struct tree_node *tree_node_new(TALLOC_CTX *ctx, struct tree_node *parent, const
 		return NULL;
 	}
 
-	node->name = talloc_strdup(ctx, name);
+	node->name = talloc_strdup(node, name);
 	if (!node->name) {
+		talloc_free(node);
 		return NULL;
 	}
 
@@ -64,8 +65,9 @@ struct tree_node *tree_node_pop(struct tree_node **plist)
 		return NULL;
 
 	*plist = node->previous;
-	if (*plist == NULL)
+	if (*plist == NULL) {
 		*plist = node->next;
+	}
 	if (node->previous) {
 		node->previous->next = node->next;
 	}
@@ -93,16 +95,6 @@ struct tree_node *tree_node_first(struct tree_node *list)
 	return list;
 }
 
-/* XXX consider talloc destructors */
-void tree_node_free(struct tree_node *node)
-{
-	SMB_ASSERT(node->child_head == NULL);
-	SMB_ASSERT(node->next == NULL);
-	SMB_ASSERT(node->previous == NULL);
-	talloc_free(node->name);
-	talloc_free(node);
-}
-
 void tree_node_free_recursive(struct tree_node *list)
 {
 	struct tree_node *node;
@@ -116,70 +108,80 @@ void tree_node_free_recursive(struct tree_node *list)
 			tree_node_free_recursive(node->child_head);
 		}
 		node->child_head = NULL;
-		tree_node_free(node);
+		talloc_free(node);
 	}
 }
 
-static void tree_view_free_current_items(struct tree_view *view)
+static void tree_view_free_current_items(ITEM **items)
 {
 	size_t i;
-	struct tree_node *tmp;
+	struct tree_node *node;
 	ITEM *item;
 
-	if (view->current_items == NULL) {
+	if (items == NULL) {
 		return;
 	}
 
-	for (i = 0; view->current_items[i] != NULL; ++i) {
-		item = view->current_items[i];
-		tmp = item_userptr(item);
-		if (tmp && tmp->label) {
-			talloc_free(tmp->label);
-			tmp->label = NULL;
+	for (i = 0; items[i] != NULL; ++i) {
+		item = items[i];
+		node = item_userptr(item);
+		if (node && node->label) {
+			talloc_free(node->label);
+			node->label = NULL;
 		}
 		free_item(item);
 	}
-	talloc_free(view->current_items);
-	view->current_items = NULL;
+
+	talloc_free(items);
 }
 
-WERROR tree_view_update(TALLOC_CTX *ctx, struct tree_view *view, struct tree_node *list)
+WERROR tree_view_update(struct tree_view *view, struct tree_node *list)
 {
 	ITEM **items;
-	struct tree_node *tmp;
+	struct tree_node *node;
 	size_t i, n_items;
 
 	if (list == NULL) {
 		list = view->root;
 	}
-	for (n_items = 0, tmp = list; tmp != NULL; tmp = tmp->next) {
+	for (n_items = 0, node = list; node != NULL; node = node->next) {
 		n_items++;
 	}
-	items = talloc_zero_array(ctx, ITEM **, n_items + 1);
-	W_ERROR_HAVE_NO_MEMORY(items);
+
+	items = talloc_zero_array(view, ITEM *, n_items + 1);
+	if (items == NULL) {
+		return WERR_NOMEM;
+	}
 	
-	for (i = 0, tmp = list; tmp != NULL; ++i, tmp = tmp->next) {
-		const char *label = tmp->name;
+	for (i = 0, node = list; node != NULL; ++i, node = node->next) {
+		const char *label = node->name;
 
 		/* Add a '+' marker to indicate that the item has
 		   descendants. */
-		if (tmp->child_head) {
-			SMB_ASSERT(tmp->label == NULL);
-			tmp->label = talloc_asprintf(ctx, "+%s", tmp->name);
-			W_ERROR_HAVE_NO_MEMORY(tmp->label);
-			label = tmp->label;
+		if (node->child_head) {
+			SMB_ASSERT(node->label == NULL);
+			node->label = talloc_asprintf(node, "+%s", node->name);
+			if (node->label == NULL) {
+				goto fail;
+			}
+			label = node->label;
 		}
 
-		items[i] = new_item(label, tmp->name);
-		set_item_userptr(items[i], tmp);
+		items[i] = new_item(label, node->name);
+		set_item_userptr(items[i], node);
 	}
 
 	unpost_menu(view->menu);
 	set_menu_items(view->menu, items);
-	tree_view_free_current_items(view);
+	tree_view_free_current_items(view->current_items);
 	view->current_items = items;
 
 	return WERR_OK;
+
+fail:
+	tree_view_free_current_items(items);
+
+	return WERR_NOMEM;
 }
 
 void tree_view_show(struct tree_view *view)
@@ -188,45 +190,64 @@ void tree_view_show(struct tree_view *view)
 	wrefresh(view->window);
 }
 
+static int tree_view_free(struct tree_view *view)
+{
+	if (view->menu) {
+		unpost_menu(view->menu);
+		free_menu(view->menu);
+	}
+	tree_view_free_current_items(view->current_items);
+	tree_node_free_recursive(view->root);
+
+	return 0;
+}
+
 struct tree_view *tree_view_new(TALLOC_CTX *ctx, struct tree_node *root,
-	WINDOW *orig, int nlines, int ncols, int begin_y, int begin_x)
+				WINDOW *orig, int nlines, int ncols,
+				int begin_y, int begin_x)
 {
 	struct tree_view *view;
-	static const char *dummy = "12345";
+	static const char *dummy = "1234";
 	
 	view = talloc_zero(ctx, struct tree_view);
 	if (view == NULL) {
 		return NULL;
 	}
 
+	talloc_set_destructor(view, tree_view_free);
+
+	view->current_items = talloc_zero_array(ctx, ITEM *, 2);
+	if (view->current_items == NULL) {
+		goto fail;
+	}
+
+	view->current_items[0] = new_item(dummy, dummy);
+	if (view->current_items[0] == NULL) {
+		goto fail;
+	}
+
 	view->window = orig;
 	view->sub_window = derwin(orig, nlines, ncols, begin_y, begin_x);
 	view->root = root;
 
-	view->current_items = talloc_zero_array(ctx, ITEM **, 2);
-	if (view->current_items == NULL) {
-		return NULL;
-	}
-	view->current_items[0] = new_item(dummy, dummy);
-
 	view->menu = new_menu(view->current_items);
+	if (view->menu == NULL) {
+		goto fail;
+	}
 	set_menu_format(view->menu, nlines, 1);
 	set_menu_win(view->menu, view->window);
 	set_menu_sub(view->menu, view->sub_window);
 	menu_opts_off(view->menu, O_SHOWDESC);
 	set_menu_mark(view->menu, "* ");
 
-	tree_view_update(ctx, view, root);
+	tree_view_update(view, root);
 
 	return view;
-}
 
-void tree_view_free(struct tree_view *view)
-{
-	unpost_menu(view->menu);
-	free_menu(view->menu);
-	tree_view_free_current_items(view);
-	tree_node_free_recursive(view->root);
+fail:
+	talloc_free(view);
+
+	return NULL;
 }
 
 static void print_path_recursive(WINDOW *label, struct tree_node *node)
