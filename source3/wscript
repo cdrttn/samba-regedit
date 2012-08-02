@@ -1446,14 +1446,7 @@ main() {
         conf.DEFINE('HAVE_GPFS', '1')
 
     if Options.options.with_regedit:
-        #XXX these checks might need to be expanded
-        ncurses = conf.CHECK_FUNCS_IN('initscr', 'ncurses', headers='ncurses.h')
-        menu = conf.CHECK_FUNCS_IN('set_menu_items item_count', 'menu',
-                            headers='menu.h')
-        panel = conf.CHECK_FUNCS_IN('new_panel show_panel', 'panel',
-                            headers='panel.h')
-        if ncurses and menu:
-                conf.env.build_regedit = True
+        conf.PROCESS_SEPARATE_RULE('system_ncurses')
 
     # Note that all charset 'modules' must actually be static, due to dependency loop issues 
     # if we include the module loader in iconv
