@@ -84,7 +84,7 @@ struct tree_node *tree_node_pop(struct tree_node **plist)
 		node->next->previous = node->previous;
 	}
 	if (node->parent && node->parent->child_head == node) {
-		node->parent->child_head = NULL;
+		node->parent->child_head = node->next;
 	}
 	node->next = NULL;
 	node->previous = NULL;
