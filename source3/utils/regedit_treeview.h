@@ -32,7 +32,7 @@ struct tree_node {
 	char *name;
 	char *label;
 	struct registry_key *key;
-	
+
 	struct tree_node *parent;
 	struct tree_node *child_head;
 	struct tree_node *previous;
@@ -40,7 +40,7 @@ struct tree_node {
 };
 
 struct tree_view {
-	
+
 	struct tree_node *root;
 	WINDOW *window;
 	PANEL *panel;

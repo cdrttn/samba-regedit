@@ -49,8 +49,8 @@ static struct {
 };
 
 static WERROR samba3_get_predefined_key(struct registry_context *ctx,
-				     uint32_t hkey_type,
-				     struct registry_key **k)
+				        uint32_t hkey_type,
+				        struct registry_key **k)
 {
 	int n;
 	const char *name;
@@ -80,82 +80,99 @@ static WERROR samba3_get_predefined_key(struct registry_context *ctx,
 }
 
 static WERROR samba3_open_key(TALLOC_CTX *mem_ctx, struct registry_key *h,
-			   const char *name, struct registry_key **key)
+			      const char *name, struct registry_key **key)
 {
-	struct samba3_key *parentkeydata = talloc_get_type(h, struct samba3_key),
-						    *mykeydata;
+	struct samba3_key *parentkeydata, *mykeydata;
+
+	parentkeydata = talloc_get_type(h, struct samba3_key);
 
 	mykeydata = talloc_zero(mem_ctx, struct samba3_key);
 	W_ERROR_HAVE_NO_MEMORY(mykeydata);
 	mykeydata->key.context = h->context;
 	*key = (struct registry_key *)mykeydata;
 
-	return reg_openkey_wrap(mem_ctx, &parentkeydata->s3key, name, &mykeydata->s3key);
+	return reg_openkey_wrap(mem_ctx, &parentkeydata->s3key,
+				name, &mykeydata->s3key);
 }
 
 static WERROR samba3_get_value_by_index(TALLOC_CTX *mem_ctx,
-				     const struct registry_key *parent,
-				     uint32_t n,
-				     const char **value_name,
-				     uint32_t *type,
-				     DATA_BLOB *data)
+				        const struct registry_key *parent,
+				        uint32_t n,
+				        const char **value_name,
+				        uint32_t *type,
+				        DATA_BLOB *data)
 {
-	struct samba3_key *mykeydata = talloc_get_type(parent, struct samba3_key);
+	struct samba3_key *mykeydata;
 
-	return reg_enumvalue_wrap(mem_ctx, &mykeydata->s3key, n, value_name, type, data);
+	mykeydata = talloc_get_type(parent, struct samba3_key);
+
+	return reg_enumvalue_wrap(mem_ctx, &mykeydata->s3key, n,
+				  value_name, type, data);
 }
 
 static WERROR samba3_get_value_by_name(TALLOC_CTX *mem_ctx,
-				     const struct registry_key *parent,
-				     const char *value_name,
-				     uint32_t *type,
-				     DATA_BLOB *data)
+				       const struct registry_key *parent,
+				       const char *value_name,
+				       uint32_t *type,
+				       DATA_BLOB *data)
 {
-	struct samba3_key *mykeydata = talloc_get_type(parent, struct samba3_key);
+	struct samba3_key *mykeydata;
 
-	return reg_queryvalue_wrap(mem_ctx, &mykeydata->s3key, value_name, type, data);
+	mykeydata = talloc_get_type(parent, struct samba3_key);
+
+	return reg_queryvalue_wrap(mem_ctx, &mykeydata->s3key,
+				   value_name, type, data);
 }
 
 static WERROR samba3_get_subkey_by_index(TALLOC_CTX *mem_ctx,
-				      const struct registry_key *parent,
-				      uint32_t n,
-				      const char **name,
-				      const char **keyclass,
-				      NTTIME *last_changed_time)
+				         const struct registry_key *parent,
+				         uint32_t n,
+				         const char **name,
+				         const char **keyclass,
+				         NTTIME *last_changed_time)
 {
-	struct samba3_key *mykeydata = talloc_get_type(parent, struct samba3_key);
+	struct samba3_key *mykeydata;
+
+	mykeydata = talloc_get_type(parent, struct samba3_key);
 
 	*keyclass = NULL;
 
-	return reg_enumkey_wrap(mem_ctx, &mykeydata->s3key, n, name, last_changed_time);
+	return reg_enumkey_wrap(mem_ctx, &mykeydata->s3key, n,
+				name, last_changed_time);
 }
 
 static WERROR samba3_add_key(TALLOC_CTX *mem_ctx,
-			  struct registry_key *parent, const char *path,
-			  const char *key_class,
-			  struct security_descriptor *sec,
-			  struct registry_key **key)
+			     struct registry_key *parent, const char *path,
+			     const char *key_class,
+			     struct security_descriptor *sec,
+			     struct registry_key **key)
 {
-	struct samba3_key *parentkd = talloc_get_type(parent, struct samba3_key);
-	struct samba3_key *newkd = talloc_zero(mem_ctx, struct samba3_key);
+	struct samba3_key *parentkd;
+	struct samba3_key *newkd;
+
+	parentkd = talloc_get_type(parent, struct samba3_key);
+	newkd = talloc_zero(mem_ctx, struct samba3_key);
 
 	W_ERROR_HAVE_NO_MEMORY(newkd);
 	newkd->key.context = parent->context;
 	*key = (struct registry_key *)newkd;
 
-	return reg_createkey_wrap(mem_ctx, &parentkd->s3key, path, &newkd->s3key);
+	return reg_createkey_wrap(mem_ctx, &parentkd->s3key, path,
+				  &newkd->s3key);
 }
 
 static WERROR samba3_del_key(TALLOC_CTX *mem_ctx, struct registry_key *parent,
-			  const char *name)
+			     const char *name)
 {
-	struct samba3_key *mykeydata = talloc_get_type(parent, struct samba3_key);
+	struct samba3_key *mykeydata;
+
+	mykeydata = talloc_get_type(parent, struct samba3_key);
 
 	return reg_deletekey_wrap(&mykeydata->s3key, name);
 }
 
 static WERROR samba3_del_value(TALLOC_CTX *mem_ctx, struct registry_key *key,
-                                 const char *name)
+                               const char *name)
 {
 	struct samba3_key *mykeydata = talloc_get_type(key, struct samba3_key);
 
@@ -163,28 +180,31 @@ static WERROR samba3_del_value(TALLOC_CTX *mem_ctx, struct registry_key *key,
 }
 
 static WERROR samba3_set_value(struct registry_key *key, const char *name,
-                              uint32_t type, const DATA_BLOB data)
+                               uint32_t type, const DATA_BLOB data)
 {
 	struct samba3_key *mykeydata = talloc_get_type(key, struct samba3_key);
 
         return reg_setvalue_wrap(&mykeydata->s3key, name, type, data);
 }
 
-static WERROR samba3_get_info(TALLOC_CTX *mem_ctx, const struct registry_key *key,
-						   const char **classname,
-						   uint32_t *num_subkeys,
-						   uint32_t *num_values,
-						   NTTIME *last_changed_time,
-						   uint32_t *max_subkeylen,
-						   uint32_t *max_valnamelen,
-						   uint32_t *max_valbufsize)
+static WERROR samba3_get_info(TALLOC_CTX *mem_ctx,
+			      const struct registry_key *key,
+			      const char **classname,
+			      uint32_t *num_subkeys,
+			      uint32_t *num_values,
+			      NTTIME *last_changed_time,
+			      uint32_t *max_subkeylen,
+			      uint32_t *max_valnamelen,
+			      uint32_t *max_valbufsize)
 {
 	struct samba3_key *mykeydata = talloc_get_type(key, struct samba3_key);
 	uint32_t max_subkeysize, secdescsize;
 
-	return reg_queryinfokey_wrap(&mykeydata->s3key, num_subkeys, max_subkeylen,
-				&max_subkeysize, num_values, max_valnamelen, max_valbufsize,
-				&secdescsize, last_changed_time);
+	return reg_queryinfokey_wrap(&mykeydata->s3key, num_subkeys,
+				     max_subkeylen, &max_subkeysize,
+				     num_values, max_valnamelen,
+				     max_valbufsize, &secdescsize,
+				     last_changed_time);
 }
 
 static struct registry_operations reg_backend_s3 = {

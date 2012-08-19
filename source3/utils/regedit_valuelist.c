@@ -34,7 +34,7 @@ static void value_list_free_items(ITEM **items)
 		item = items[i];
 		vitem = item_userptr(item);
 		SMB_ASSERT(vitem != NULL);
-		free_item(item);	
+		free_item(item);
 	}
 
 	talloc_free(items);
@@ -71,7 +71,7 @@ struct value_list *value_list_new(TALLOC_CTX *ctx, int nlines, int ncols,
 	if (vl == NULL) {
 		return NULL;
 	}
-	
+
 	talloc_set_destructor(vl, value_list_free);
 
 	vl->empty = talloc_zero_array(vl, ITEM *, 2);
@@ -259,13 +259,13 @@ WERROR value_list_load(struct value_list *vl, struct registry_key *key)
 			talloc_free(vitem);
 			return rv;
 		}
-		
+
 		rv = append_data_summary(vitem);
 		if (!W_ERROR_IS_OK(rv)) {
 			talloc_free(vitem);
 			return rv;
 		}
-	
+
 		/* ncurses won't accept empty strings in menu items */
 		name = vitem->value_name;
 		if (name[0] == '\0') {
@@ -278,7 +278,7 @@ WERROR value_list_load(struct value_list *vl, struct registry_key *key)
 		}
 
 		set_item_userptr(new_items[idx], vitem);
-	}	
+	}
 
 	set_menu_items(vl->menu, new_items);
 	value_list_free_items(vl->items);

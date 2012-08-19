@@ -28,27 +28,30 @@ struct samba3_registry_key {
 	struct registry_key *key;
 };
 
-WERROR reg_openhive_wrap(TALLOC_CTX *ctx, const char *hive, 
-	struct samba3_registry_key *key);
+WERROR reg_openhive_wrap(TALLOC_CTX *ctx, const char *hive,
+			 struct samba3_registry_key *key);
 WERROR reg_openkey_wrap(TALLOC_CTX *ctx, struct samba3_registry_key *parent,
-	const char *name, struct samba3_registry_key *key);
+		        const char *name, struct samba3_registry_key *key);
 WERROR reg_enumvalue_wrap(TALLOC_CTX *ctx, struct samba3_registry_key *key,
 	uint32 idx, char **name, uint32_t *type, DATA_BLOB *data);
 WERROR reg_queryvalue_wrap(TALLOC_CTX *ctx, struct samba3_registry_key *key,
-	const char *name, uint32_t *type, DATA_BLOB *data);
+			   const char *name, uint32_t *type, DATA_BLOB *data);
 WERROR reg_enumkey_wrap(TALLOC_CTX *ctx, struct samba3_registry_key *key,
-	uint32 idx, char **name, NTTIME *last_write_time);
+			uint32 idx, char **name, NTTIME *last_write_time);
 WERROR reg_createkey_wrap(TALLOC_CTX *ctx, struct samba3_registry_key *parent,
-	const char *subkeypath, struct samba3_registry_key *pkey);
-WERROR reg_deletekey_wrap(struct samba3_registry_key *parent, const char *path);
+			  const char *subkeypath,
+			  struct samba3_registry_key *pkey);
+WERROR reg_deletekey_wrap(struct samba3_registry_key *parent,
+			  const char *path);
 WERROR reg_deletevalue_wrap(struct samba3_registry_key *key, const char *name);
-WERROR reg_queryinfokey_wrap(struct samba3_registry_key *key, uint32_t *num_subkeys,
-	uint32_t *max_subkeylen, uint32_t *max_subkeysize,
-	uint32_t *num_values, uint32_t *max_valnamelen,
-	uint32_t *max_valbufsize, uint32_t *secdescsize,
-	NTTIME *last_changed_time);
+WERROR reg_queryinfokey_wrap(struct samba3_registry_key *key,
+			     uint32_t *num_subkeys, uint32_t *max_subkeylen,
+			     uint32_t *max_subkeysize, uint32_t *num_values,
+			     uint32_t *max_valnamelen,
+			     uint32_t *max_valbufsize, uint32_t *secdescsize,
+			     NTTIME *last_changed_time);
 WERROR reg_setvalue_wrap(struct samba3_registry_key *key, const char *name,
-	uint32_t type, const DATA_BLOB data);
+			 uint32_t type, const DATA_BLOB data);
 WERROR reg_init_wrap(void);
 
 WERROR reg_open_samba3(TALLOC_CTX *mem_ctx, struct registry_context **ctx);

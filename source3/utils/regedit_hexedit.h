@@ -31,7 +31,7 @@ enum {
 	HE_CURSOR_PGDN = 0x1500
 };
 
-/* 
+/*
  offset    hex1         hex2         ascii
  00000000  FF FF FF FF  FF FF FF FF  ........
 */

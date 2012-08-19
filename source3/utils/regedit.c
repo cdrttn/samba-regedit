@@ -104,13 +104,13 @@ static struct tree_node *load_hives(TALLOC_CTX *mem_ctx,
 
 	root = NULL;
 	prev = NULL;
-	
+
 	for (i = 0; hives[i] != NULL; ++i) {
 		rv = reg_get_predefined_key_by_name(ctx, hives[i], &key);
 		if (!W_ERROR_IS_OK(rv)) {
 			continue;
 		}
-		
+
 		node = tree_node_new(mem_ctx, NULL, hives[i], key);
 		if (node == NULL) {
 			return NULL;
@@ -131,19 +131,19 @@ static struct tree_node *load_hives(TALLOC_CTX *mem_ctx,
 static void print_help(struct regedit *regedit)
 {
 	const char *khelp = "[n] New Key [s] New Subkey [d] Del Key "
-			    "[LEFT] Ascend [RIGHT] Descend"; 
+			    "[LEFT] Ascend [RIGHT] Descend";
 	const char *vhelp = "[n] New Value [d] Del Value [ENTER] Edit";
 	const char *msg = "KEYS";
 	const char *help = khelp;
 	const char *genhelp = "[TAB] Switch sections [q] Quit regedit "
 			      "[UP] List up [DOWN] List down";
 	int i, pad;
-	
+
 	if (!regedit->tree_input) {
 		msg = "VALUES";
 		help = vhelp;
 	}
-	
+
 	move(HELP1_START_Y, HELP1_START_X);
 	clrtoeol();
 	attron(A_REVERSE);
@@ -165,7 +165,7 @@ static void print_heading(struct regedit *regedit)
 {
 	move(HEADING_START_Y, 0);
 	clrtoeol();
-	
+
 	if (regedit->tree_input) {
 		attron(A_REVERSE);
 	} else {
@@ -206,7 +206,7 @@ static void add_reg_key(struct regedit *regedit, struct tree_node *node,
 		struct tree_node *new_node;
 		struct tree_node *list;
 		struct tree_node *parent;
-	
+
 		if (subkey) {
 			parent = node;
 			list = node->child_head;
@@ -329,7 +329,7 @@ static void handle_tree_input(struct regedit *regedit, int c)
 static void handle_value_input(struct regedit *regedit, int c)
 {
 	struct value_item *vitem;
-	
+
 	switch (c) {
 	case KEY_DOWN:
 		menu_driver(regedit->vl->menu, REQ_DOWN_ITEM);
@@ -352,7 +352,7 @@ static void handle_value_input(struct regedit *regedit, int c)
 	case 'N': {
 		int new_type;
 		int sel;
-		
+
 		sel = dialog_select_type(regedit, &new_type);
 		if (sel == DIALOG_OK) {
 			struct tree_node *node;
@@ -519,7 +519,7 @@ int main(int argc, char **argv)
 	}
 
 	/* some simple tests */
-	
+
 	rv = reg_open_samba3(frame, &ctx);
 	if (!W_ERROR_IS_OK(rv)) {
 		TALLOC_FREE(frame);

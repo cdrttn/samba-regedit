@@ -35,7 +35,7 @@ static char *string_trim_n(TALLOC_CTX *ctx, const char *buf, size_t n)
 
 	if (str) {
 		trim_string(str, " ", " ");
-	}	
+	}
 
 	return str;
 }
@@ -48,7 +48,7 @@ static char *string_trim(TALLOC_CTX *ctx, const char *buf)
 
 	if (str) {
 		trim_string(str, " ", " ");
-	}	
+	}
 
 	return str;
 }
@@ -96,10 +96,10 @@ struct dialog *dialog_new(TALLOC_CTX *ctx, const char *title, int nlines,
 	}
 
 	box(dia->window, 0, 0);
-	mvwaddstr(dia->window, 0, 1, title); 
+	mvwaddstr(dia->window, 0, 1, title);
 
 	/* body of the dialog within the box outline */
-	dia->sub_window = derwin(dia->window, nlines - 2, ncols - 2, 1, 1); 
+	dia->sub_window = derwin(dia->window, nlines - 2, ncols - 2, 1, 1);
 	if (dia->sub_window == NULL) {
 		goto fail;
 	}
@@ -139,7 +139,7 @@ static void center_dialog_above_window(int *nlines, int *ncols,
 		*y = centery - *nlines / 2;
 	}
 	if (*ncols/2 < centerx) {
-		*x = centerx - *ncols / 2; 
+		*x = centerx - *ncols / 2;
 	}
 }
 
@@ -179,8 +179,8 @@ static int dialog_getch(struct dialog *dia)
 	return c;
 }
 
-struct dialog *dialog_center_new(TALLOC_CTX *ctx, const char *title, int nlines,
-				 int ncols)
+struct dialog *dialog_center_new(TALLOC_CTX *ctx, const char *title,
+				 int nlines, int ncols)
 {
 	struct dialog *dia;
 	int y, x;
@@ -208,7 +208,7 @@ struct dialog *dialog_choice_new(TALLOC_CTX *ctx, const char *title,
 	}
 
 	dia->menu_window = derwin(dia->sub_window, 1, ncols - 3,
-				  nlines - 3, 0); 
+				  nlines - 3, 0);
 	if (dia->menu_window == NULL) {
 		goto fail;
 	}
@@ -249,7 +249,7 @@ struct dialog *dialog_choice_new(TALLOC_CTX *ctx, const char *title,
 
 fail:
 	talloc_free(dia);
-	
+
 	return NULL;
 }
 
@@ -335,7 +335,7 @@ static void handle_form_input(FORM *frm, int c)
 		break;
 	case KEY_LEFT:
 		form_driver(frm, REQ_LEFT_CHAR);
-		break;  
+		break;
 	case KEY_RIGHT:
 		form_driver(frm, REQ_RIGHT_CHAR);
 		break;
@@ -438,16 +438,17 @@ int dialog_input(TALLOC_CTX *ctx, char **output, const char *title,
 	set_current_field(input, field[0]);
 	post_form(input);
 	*output = NULL;
-	
+
 	update_panels();
 	doupdate();
 
 	while (rv == -1) {
 		int c = dialog_getch(dia);
-		
+
 		if (c == '\t' || c == KEY_BTAB) {
 			if (input_section) {
-				if (form_driver(input,REQ_VALIDATION) == E_OK) {
+				int valid = form_driver(input, REQ_VALIDATION);
+				if (valid == E_OK) {
 					input_section = false;
 					if (c == '\t') {
 						menu_driver(dia->choices,
@@ -457,7 +458,7 @@ int dialog_input(TALLOC_CTX *ctx, char **output, const char *title,
 							    REQ_LAST_ITEM);
 					}
 					pos_menu_cursor(dia->choices);
-				}	
+				}
 			} else {
 				if ((c == '\t' &&
 				     current_item_is_last(dia->choices)) ||
@@ -611,7 +612,7 @@ static WERROR fill_value_buffer(struct edit_dialog *edit,
 			        const struct value_item *vitem)
 {
 	char *tmp;
-	
+
 	switch (vitem->type) {
 	case REG_DWORD: {
 		uint32_t v = 0;
@@ -672,7 +673,7 @@ static bool value_exists(TALLOC_CTX *ctx, const struct registry_key *key,
 	WERROR rv;
 
 	rv = reg_key_get_value_by_name(ctx, key, name, &type, &blob);
-	
+
 	return W_ERROR_IS_OK(rv);
 }
 
@@ -713,7 +714,7 @@ static WERROR set_value(struct edit_dialog *edit, struct registry_key *key,
 
 		if (!str || !push_reg_sz(edit, &blob, str)) {
 			rv = WERR_NOMEM;
-		} 
+		}
 		break;
 	}
 	case REG_MULTI_SZ: {
@@ -734,7 +735,7 @@ static WERROR set_value(struct edit_dialog *edit, struct registry_key *key,
 		}
 		if (!push_reg_multi_sz(edit, &blob, arr)) {
 			rv = WERR_NOMEM;
-		}	
+		}
 		break;
 	}
 	case REG_BINARY:
@@ -743,7 +744,7 @@ static WERROR set_value(struct edit_dialog *edit, struct registry_key *key,
 		break;
 	}
 
-	rv = reg_val_set(key, name, type, blob);	
+	rv = reg_val_set(key, name, type, blob);
 
 	return rv;
 }
@@ -809,7 +810,8 @@ static void section_up(struct edit_dialog *edit)
 			if (edit->buf) {
 				hexedit_set_cursor(edit->buf);
 			} else {
-				set_current_field(edit->input, edit->field[FLD_DATA]);
+				set_current_field(edit->input,
+						  edit->field[FLD_DATA]);
 				pos_form_cursor(edit->input);
 			}
 		} else {
@@ -990,8 +992,8 @@ static WERROR edit_init_form(struct edit_dialog *edit, uint32_t type,
 	return WERR_OK;
 }
 
-WERROR dialog_edit_value(TALLOC_CTX *ctx, struct registry_key *key, uint32_t type,
-		      const struct value_item *vitem)
+WERROR dialog_edit_value(TALLOC_CTX *ctx, struct registry_key *key,
+			 uint32_t type, const struct value_item *vitem)
 {
 	struct edit_dialog *edit;
 #define DIALOG_RESIZE 2
@@ -1017,7 +1019,7 @@ WERROR dialog_edit_value(TALLOC_CTX *ctx, struct registry_key *key, uint32_t typ
 	doupdate();
 
 	edit->section = IN_NAME;
-	
+
 	while (1) {
 		int c = dialog_getch(edit->dia);
 		if (c == '\t') {
@@ -1097,7 +1099,7 @@ int dialog_select_type(TALLOC_CTX *ctx, int *type)
 	WINDOW *type_win;
 	int sel = -1;
 	size_t i;
-	
+
 	dia = dialog_choice_center_new(ctx, "New Value", choices, 10, 20);
 	if (dia == NULL) {
 		return -1;
@@ -1108,7 +1110,7 @@ int dialog_select_type(TALLOC_CTX *ctx, int *type)
 	if (type_win == NULL) {
 		goto finish;
 	}
-	
+
 	item = talloc_zero_array(dia, ITEM *, NTYPES + 1);
 	if (item == NULL) {
 		goto finish;
@@ -1142,7 +1144,7 @@ int dialog_select_type(TALLOC_CTX *ctx, int *type)
 	while (sel == -1) {
 		ITEM *it;
 		int c = dialog_getch(dia);
-		
+
 		switch (c) {
 		case KEY_UP:
 			menu_driver(list, REQ_UP_ITEM);

@@ -54,7 +54,7 @@ void tree_node_append(struct tree_node *left, struct tree_node *right)
 	if (left->next) {
 		right->next = left->next;
 		left->next->previous = right;
-	}	
+	}
 	left->next = right;
 	right->previous = left;
 }
@@ -176,7 +176,7 @@ WERROR tree_node_load_children(struct tree_node *node)
 		if (new_node == NULL) {
 			return WERR_NOMEM;
 		}
-		
+
 		if (prev) {
 			tree_node_append(prev, new_node);
 		}
@@ -251,7 +251,7 @@ WERROR tree_view_update(struct tree_view *view, struct tree_node *list)
 	if (items == NULL) {
 		return WERR_NOMEM;
 	}
-	
+
 	for (i = 0, node = list; node != NULL; ++i, node = node->next) {
 		const char *label = node->name;
 
@@ -315,7 +315,7 @@ struct tree_view *tree_view_new(TALLOC_CTX *ctx, struct tree_node *root,
 {
 	struct tree_view *view;
 	static const char *dummy = "(empty)";
-	
+
 	view = talloc_zero(ctx, struct tree_view);
 	if (view == NULL) {
 		return NULL;
@@ -371,7 +371,8 @@ void tree_view_resize(struct tree_view *view, int nlines, int ncols,
 	post_menu(view->menu);
 }
 
-static void print_path_recursive(WINDOW *label, struct tree_node *node, size_t *len)
+static void print_path_recursive(WINDOW *label, struct tree_node *node,
+				 size_t *len)
 {
 	if (node->parent)
 		print_path_recursive(label, node->parent, len);
