@@ -638,9 +638,10 @@ static void display_window(TALLOC_CTX *mem_ctx, struct registry_context *ctx)
 
 int main(int argc, const char **argv)
 {
+	const char *remote = NULL;
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
-		/* ... */
+		{"remote", 'R', POPT_ARG_STRING, &remote, 0, "connect to specified remote server", NULL},
 		POPT_COMMON_SAMBA
 		POPT_COMMON_CONNECTION
 		POPT_COMMON_CREDENTIALS
@@ -668,9 +669,19 @@ int main(int argc, const char **argv)
 		exit(1);
 	}
 
-	/* some simple tests */
-
-	rv = reg_open_samba3(frame, &ctx);
+	if (remote) {
+		struct tevent_context *ev;
+		ev = samba_tevent_context_init(frame);
+		rv = reg_open_remote(frame, &ctx, NULL, cmdline_credentials,
+				     cmdline_lp_ctx, remote, ev);
+		if (!W_ERROR_IS_OK(rv)) {
+			fprintf(stderr,
+				"Unable to open remote registry at %s:%s \n",
+				remote, win_errstr(rv));
+		}
+	} else {
+		rv = reg_open_samba3(frame, &ctx);
+	}
 	if (!W_ERROR_IS_OK(rv)) {
 		TALLOC_FREE(frame);
 
