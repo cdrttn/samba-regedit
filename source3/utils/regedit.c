@@ -18,7 +18,7 @@
  */
 
 #include "includes.h"
-#include "popt_common.h"
+#include "lib/cmdline/popt_common.h"
 #include "lib/util/data_blob.h"
 #include "lib/registry/registry.h"
 #include "regedit.h"
@@ -648,7 +648,6 @@ int main(int argc, const char **argv)
 	};
 	int opt;
 	poptContext pc;
-	struct user_auth_info *auth_info;
 	TALLOC_CTX *frame;
 	struct registry_context *ctx;
 	WERROR rv;
@@ -656,14 +655,8 @@ int main(int argc, const char **argv)
 	frame = talloc_stackframe();
 
 	setup_logging("regedit", DEBUG_DEFAULT_STDERR);
-	lp_set_cmdline("log level", "0");
 
 	/* process options */
-	auth_info = user_auth_info_init(frame);
-	if (auth_info == NULL) {
-		exit(1);
-	}
-	popt_common_set_auth_info(auth_info);
 	pc = poptGetContext("regedit", argc, argv, long_options, 0);
 
 	while ((opt = poptGetNextOpt(pc)) != -1) {
