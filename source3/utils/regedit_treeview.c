@@ -421,7 +421,7 @@ struct tree_view *tree_view_new(TALLOC_CTX *ctx, struct tree_node *root,
 	}
 	view->root = root;
 
-	view->list = multilist_new(ctx, view->sub, &tv_accessors, 1);
+	view->list = multilist_new(view, view->sub, &tv_accessors, 1);
 	if (view->list == NULL) {
 		goto fail;
 	}
