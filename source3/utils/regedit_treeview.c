@@ -340,6 +340,10 @@ static const char *tv_get_column_header(const void *data, unsigned col)
 
 static const void *tv_get_first_row(const void *data)
 {
+	if (data == NULL) {
+		return NULL;
+	}
+
 	return talloc_get_type_abort(data, struct tree_node);
 }
 
