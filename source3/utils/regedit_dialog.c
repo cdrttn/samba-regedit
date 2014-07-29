@@ -441,6 +441,32 @@ void dialog_destroy(struct dialog *dia)
 	}
 }
 
+/*
+  This is a workaround described in the link below for
+  fixing the position of subwindows of a panel window that
+  has been moved:
+  http://permalink.gmane.org/gmane.comp.lib.ncurses.bugs/2952
+*/
+static void fix_subwin(WINDOW *sub)
+{
+	WINDOW *subwin;
+	int x=0;
+	int y=0;
+
+	subwin=sub;
+	while(subwin->_parent!=NULL) {
+		x+=subwin->_parx;
+		y+=subwin->_pary;
+		subwin=subwin->_parent;
+	}
+	x+=subwin->_begx;
+	y+=subwin->_begy;
+
+	subwin=sub;
+	subwin->_begy=y;
+	subwin->_begx=x;
+}
+
 static int dialog_getch(struct dialog *dia)
 {
 	int c;
@@ -448,6 +474,7 @@ static int dialog_getch(struct dialog *dia)
 	c = regedit_getch();
 	if (c == KEY_RESIZE) {
 		int nlines, ncols, y, x;
+		struct dialog_section *section;
 
 		getmaxyx(dia->window, nlines, ncols);
 		getbegyx(dia->window, y, x);
@@ -470,6 +497,11 @@ static int dialog_getch(struct dialog *dia)
 			}
 		}
 		move_panel(dia->panel, y, x);
+		section = dia->head_section;
+		do {
+			fix_subwin(section->window);
+			section = section->next;
+		} while (section != dia->head_section);
 	}
 
 	return c;
