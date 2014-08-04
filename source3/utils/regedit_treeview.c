@@ -357,8 +357,10 @@ static WERROR prev_depth_first(struct tree_node **node)
 				*node = tree_node_last((*node)->child_head);
 			}
 		}
-	} else {
+	} else if (!tree_node_is_top_level(*node)) {
 		*node = (*node)->parent;
+	} else {
+		*node = NULL;
 	}
 
 	return rv;
