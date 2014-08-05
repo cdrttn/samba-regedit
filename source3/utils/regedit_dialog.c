@@ -2063,7 +2063,7 @@ static bool search_on_submit(struct dialog *dia, struct dialog_section *section,
 		return false;
 	}
 
-	TALLOC_FREE(search->opts->query);
+	talloc_free(discard_const(search->opts->query));
 	search->opts->query = dialog_section_text_field_get(search->ctx, query);
 	SMB_ASSERT(search->opts->query != NULL);
 	if (search->opts->query[0] == '\0') {

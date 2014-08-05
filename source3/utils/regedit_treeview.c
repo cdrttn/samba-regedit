@@ -646,9 +646,9 @@ void tree_view_resize(struct tree_view *view, int nlines, int ncols,
 	tree_view_show(view);
 }
 
-char **tree_node_get_path(TALLOC_CTX *ctx, struct tree_node *node)
+const char **tree_node_get_path(TALLOC_CTX *ctx, struct tree_node *node)
 {
-	char **array;
+	const char **array;
 	size_t nitems, index;
 	struct tree_node *p;
 
@@ -656,7 +656,7 @@ char **tree_node_get_path(TALLOC_CTX *ctx, struct tree_node *node)
 		++nitems;
 	}
 
-	array = talloc_zero_array(ctx, char *, nitems + 1);
+	array = talloc_zero_array(ctx, const char *, nitems + 1);
 	if (array == NULL) {
 		return NULL;
 	}
@@ -666,7 +666,7 @@ char **tree_node_get_path(TALLOC_CTX *ctx, struct tree_node *node)
 	     p = p->parent, --index) {
 		array[index] = talloc_strdup(array, p->name);
 		if (array[index] == NULL) {
-			talloc_free(array);
+			talloc_free(discard_const(array));
 			return NULL;
 		}
 	}
@@ -678,7 +678,7 @@ char **tree_node_get_path(TALLOC_CTX *ctx, struct tree_node *node)
 size_t tree_node_print_path(WINDOW *label, struct tree_node *node)
 {
 	size_t len = 1;
-	char **path;
+	const char **path;
 	TALLOC_CTX *frame;
 
 	if (node == NULL)

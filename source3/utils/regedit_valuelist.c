@@ -384,7 +384,6 @@ WERROR value_list_load_quick(struct value_list *vl, struct registry_key *key)
 WERROR value_list_sync(struct value_list *vl)
 {
 	uint32_t idx;
-	struct value_item *vitem, *new_items;
 	WERROR rv;
 
 	for (idx = 0; idx < vl->nvalues; ++idx) {

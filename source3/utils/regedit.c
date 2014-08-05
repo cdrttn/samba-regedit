@@ -146,7 +146,7 @@ static void load_values(struct regedit *regedit)
 static void add_reg_key(struct regedit *regedit, struct tree_node *node,
 			bool subkey)
 {
-	char *name;
+	const char *name;
 	const char *msg;
 
 	if (!subkey && tree_node_is_top_level(node)) {
@@ -204,7 +204,7 @@ static void add_reg_key(struct regedit *regedit, struct tree_node *node,
 			dialog_notice(regedit, DIA_ALERT, "New Key",
 				      "Failed to create key: %s", msg);
 		}
-		talloc_free(name);
+		talloc_free(discard_const(name));
 	}
 }
 
@@ -569,7 +569,7 @@ static void handle_main_input(struct regedit *regedit, int c)
 	switch (c) {
 	case 18: { /* CTRL-R */
 		struct tree_node *root, *node;
-		char **path;
+		const char **path;
 
 		node = tree_view_get_current_node(regedit->keys);
 		path = tree_node_get_path(regedit, node);
@@ -585,7 +585,7 @@ static void handle_main_input(struct regedit *regedit, int c)
 		tree_view_show(regedit->keys);
 		value_list_show(regedit->vl);
 		print_path(regedit, node);
-		talloc_free(path);
+		talloc_free(discard_const(path));
 		break;
 	}
 	case 'f':
