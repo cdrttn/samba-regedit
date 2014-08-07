@@ -729,9 +729,11 @@ static void display_window(TALLOC_CTX *mem_ctx, struct registry_context *ctx)
 int main(int argc, const char **argv)
 {
 	const char *remote = NULL;
+	int samba4_local = 0;
 	struct poptOption long_options[] = {
 		POPT_AUTOHELP
 		{"remote", 'R', POPT_ARG_STRING, &remote, 0, "connect to specified remote server", NULL},
+		{"samba4", '4', POPT_ARG_NONE, &samba4_local, 0, "open local samba 4 registry", NULL},
 		POPT_COMMON_SAMBA
 		POPT_COMMON_CONNECTION
 		POPT_COMMON_CREDENTIALS
@@ -741,6 +743,7 @@ int main(int argc, const char **argv)
 	poptContext pc;
 	TALLOC_CTX *frame;
 	struct registry_context *ctx;
+	struct tevent_context *ev;
 	WERROR rv;
 
 	frame = talloc_stackframe();
@@ -760,7 +763,6 @@ int main(int argc, const char **argv)
 	}
 
 	if (remote) {
-		struct tevent_context *ev;
 		ev = samba_tevent_context_init(frame);
 		rv = reg_open_remote(frame, &ctx, NULL, cmdline_credentials,
 				     cmdline_lp_ctx, remote, ev);
@@ -768,6 +770,15 @@ int main(int argc, const char **argv)
 			fprintf(stderr,
 				"Unable to open remote registry at %s:%s \n",
 				remote, win_errstr(rv));
+		}
+	} else if (samba4_local) {
+		ev = samba_tevent_context_init(frame);
+		rv = reg_open_samba(frame, &ctx, ev, cmdline_lp_ctx, NULL,
+				    cmdline_credentials);
+		if (!W_ERROR_IS_OK(rv)) {
+			fprintf(stderr,
+				"Unable to open Samba 4 local registry: %s\n",
+				win_errstr(rv));
 		}
 	} else {
 		rv = reg_open_samba3(frame, &ctx);
