@@ -1215,7 +1215,7 @@ static void buttons_unhighlight(struct dialog_section_buttons *buttons)
 	short pair;
 	attr_t attr;
 
-	wattr_get(buttons->section.window, &attr, &pair, NULL);
+	(wattr_get)(buttons->section.window, &attr, &pair, NULL);
 	mvwchgat(buttons->section.window, 0, 0, -1, A_NORMAL, pair, NULL);
 	wnoutrefresh(buttons->section.window);
 }
@@ -1226,7 +1226,7 @@ static void buttons_highlight(struct dialog_section_buttons *buttons)
 	short pair;
 	attr_t attr;
 
-	wattr_get(buttons->section.window, &attr, &pair, NULL);
+	(wattr_get)(buttons->section.window, &attr, &pair, NULL);
 	mvwchgat(buttons->section.window, 0, 0, -1, A_NORMAL, pair, NULL);
 	mvwchgat(buttons->section.window, 0, spec->col,
 		 strlen(spec->label), A_REVERSE, pair, NULL);
@@ -1406,7 +1406,7 @@ static void options_unhighlight(struct dialog_section_options *options)
 	attr_t attr;
 	size_t row;
 
-	wattr_get(options->section.window, &attr, &pair, NULL);
+	(wattr_get)(options->section.window, &attr, &pair, NULL);
 	for (row = 0; row < options->section.nlines; ++row) {
 		mvwchgat(options->section.window, row, 0, -1, A_NORMAL, pair, NULL);
 	}
@@ -1420,7 +1420,7 @@ static void options_highlight(struct dialog_section_options *options)
 	attr_t attr;
 	size_t row;
 
-	wattr_get(options->section.window, &attr, &pair, NULL);
+	(wattr_get)(options->section.window, &attr, &pair, NULL);
 	for (row = 0; row < options->section.nlines; ++row) {
 		mvwchgat(options->section.window, row, 0, -1, A_NORMAL, pair, NULL);
 	}
