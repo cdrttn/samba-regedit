@@ -103,9 +103,9 @@ struct dialog_section_ops {
 };
 
 enum section_justify {
-	JUSTIFY_LEFT,
-	JUSTIFY_CENTER,
-	JUSTIFY_RIGHT,
+	SECTION_JUSTIFY_LEFT,
+	SECTION_JUSTIFY_CENTER,
+	SECTION_JUSTIFY_RIGHT
 };
 
 struct dialog_section {

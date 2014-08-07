@@ -386,12 +386,12 @@ WERROR dialog_create(struct dialog *dia)
 		col = 3;
 
 		switch (section->justify) {
-		case JUSTIFY_LEFT:
+		case SECTION_JUSTIFY_LEFT:
 			break;
-		case JUSTIFY_CENTER:
+		case SECTION_JUSTIFY_CENTER:
 			col += (ncols - 6)/ 2 - section->ncols / 2;
 			break;
-		case JUSTIFY_RIGHT:
+		case SECTION_JUSTIFY_RIGHT:
 			break;
 		}
 
@@ -1657,7 +1657,7 @@ int dialog_input(TALLOC_CTX *ctx, const char **output, const char *title,
 	section = dialog_section_hsep_new(dia, 0);
 	dialog_append_section(dia, section);
 	section = dialog_section_buttons_new(dia, spec);
-	dialog_section_set_justify(section, JUSTIFY_CENTER);
+	dialog_section_set_justify(section, SECTION_JUSTIFY_CENTER);
 	dialog_append_section(dia, section);
 
 	dialog_create(dia);
@@ -1701,7 +1701,7 @@ int dialog_notice(TALLOC_CTX *ctx, enum dialog_type type,
 	section = dialog_section_hsep_new(dia, 0);
 	dialog_append_section(dia, section);
 	section = dialog_section_buttons_new(dia, spec);
-	dialog_section_set_justify(section, JUSTIFY_CENTER);
+	dialog_section_set_justify(section, SECTION_JUSTIFY_CENTER);
 	dialog_append_section(dia, section);
 
 	dialog_create(dia);
@@ -1956,7 +1956,7 @@ int dialog_edit_value(TALLOC_CTX *ctx, struct registry_key *key,
 	section = dialog_section_hsep_new(dia, 0);
 	dialog_append_section(dia, section);
 	section = dialog_section_buttons_new(dia, spec);
-	dialog_section_set_justify(section, JUSTIFY_CENTER);
+	dialog_section_set_justify(section, SECTION_JUSTIFY_CENTER);
 	dialog_append_section(dia, section);
 
 	dialog_create(dia);
@@ -2022,7 +2022,7 @@ int dialog_select_type(TALLOC_CTX *ctx, int *type)
 	section = dialog_section_hsep_new(dia, 0);
 	dialog_append_section(dia, section);
 	section = dialog_section_buttons_new(dia, spec);
-	dialog_section_set_justify(section, JUSTIFY_CENTER);
+	dialog_section_set_justify(section, SECTION_JUSTIFY_CENTER);
 	dialog_append_section(dia, section);
 
 	dialog_create(dia);
@@ -2115,7 +2115,7 @@ int dialog_search_input(TALLOC_CTX *ctx, struct regedit_search_opts *opts)
 	section = dialog_section_hsep_new(dia, 0);
 	dialog_append_section(dia, section);
 	section = dialog_section_buttons_new(dia, spec);
-	dialog_section_set_justify(section, JUSTIFY_CENTER);
+	dialog_section_set_justify(section, SECTION_JUSTIFY_CENTER);
 	dialog_append_section(dia, section);
 
 	dialog_create(dia);
