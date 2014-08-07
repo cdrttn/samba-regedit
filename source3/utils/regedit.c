@@ -782,6 +782,11 @@ int main(int argc, const char **argv)
 		}
 	} else {
 		rv = reg_open_samba3(frame, &ctx);
+		if (!W_ERROR_IS_OK(rv)) {
+			fprintf(stderr,
+				"Unable to open Samba 3 local registry: %s\n",
+				win_errstr(rv));
+		}
 	}
 	if (!W_ERROR_IS_OK(rv)) {
 		TALLOC_FREE(frame);
