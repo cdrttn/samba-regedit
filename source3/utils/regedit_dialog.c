@@ -1056,7 +1056,7 @@ struct dialog_section_hexedit {
 	struct hexedit *buf;
 };
 
-#define HEXEDIT_MIN_SIZE 16
+#define HEXEDIT_MIN_SIZE 1
 static WERROR hexedit_create(struct dialog *dia,
 				struct dialog_section *section)
 {
@@ -1148,11 +1148,6 @@ static bool hexedit_on_right(struct dialog *dia,
 static enum dialog_action hexedit_on_enter(struct dialog *dia,
 					      struct dialog_section *section)
 {
-	struct dialog_section_hexedit *hexedit =
-		talloc_get_type_abort(section, struct dialog_section_hexedit);
-
-	// FIXME hexedit_driver(hexedit->buf, REQ_NEW_LINE);
-
 	return DIALOG_IGNORE;
 }
 

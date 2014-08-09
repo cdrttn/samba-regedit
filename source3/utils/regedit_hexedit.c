@@ -225,17 +225,6 @@ static int offset_to_hex_col(size_t pos)
 	return -1;
 }
 
-static bool scroll_down(struct hexedit *buf)
-{
-	if (buf->offset + bytes_per_screen(buf->win) >= buf->len) {
-		return false;
-	}
-
-	buf->offset += BYTES_PER_LINE;
-
-	return true;
-}
-
 static bool scroll_up(struct hexedit *buf)
 {
 	if (buf->offset == 0) {
@@ -249,17 +238,34 @@ static bool scroll_up(struct hexedit *buf)
 
 static void cursor_down(struct hexedit *buf)
 {
+	size_t space;
+	bool need_refresh = false;
+
+	space = buf->offset + (buf->cursor_y + 1) * BYTES_PER_LINE;
+	if (space > buf->len) {
+		return;
+	}
+
 	if (buf->cursor_y + 1 == max_rows(buf->win)) {
-		if (scroll_down(buf)) {
-			hexedit_refresh(buf);
-		}
+		buf->offset += BYTES_PER_LINE;
+		need_refresh = true;
 	} else {
-		if (buf->cursor_offset + BYTES_PER_LINE >= buf->len) {
-			return;
-		}
 		buf->cursor_y++;
 	}
 
+	if (buf->cursor_offset + BYTES_PER_LINE > buf->len) {
+		buf->nibble = 0;
+		buf->cursor_offset = buf->len;
+		buf->cursor_line_offset = buf->len - space;
+		if (buf->cursor_x >= ASCII_COL) {
+			buf->cursor_x = ASCII_COL + buf->cursor_line_offset;
+		} else {
+			buf->cursor_x = offset_to_hex_col(buf->cursor_line_offset);
+		}
+	}
+	if (need_refresh) {
+		hexedit_refresh(buf);
+	}
 	calc_cursor_offset(buf);
 }
 
@@ -310,7 +316,7 @@ static void cursor_left(struct hexedit *buf)
 	} else if (buf->cursor_x == ASCII_COL) {
 		size_t off = buf->offset + buf->cursor_y * BYTES_PER_LINE;
 		if (off + 7 >= buf->len) {
-			size_t lastpos = buf->len - off - 1;
+			size_t lastpos = buf->len - off;
 			buf->cursor_x = offset_to_hex_col(lastpos) + 1;
 			buf->cursor_line_offset = lastpos;
 		} else {
@@ -344,7 +350,7 @@ static void cursor_right(struct hexedit *buf)
 		return;
 	}
 	if ((buf->cursor_x >= ASCII_COL || buf->nibble == 1) &&
-	    buf->cursor_offset + 1 == buf->len) {
+	    buf->cursor_offset == buf->len) {
 		if (buf->cursor_x < ASCII_COL) {
 			new_x = ASCII_COL;
 			buf->cursor_line_offset = 0;
@@ -385,6 +391,10 @@ static void do_edit(struct hexedit *buf, int c)
 		return;
 	}
 
+	if (buf->cursor_offset == buf->len) {
+		hexedit_resize_buffer(buf, buf->len + 1);
+	}
+
 	byte = buf->data + buf->cursor_offset;
 
 	if (buf->cursor_x >= ASCII_COL) {
@@ -397,7 +407,11 @@ static void do_edit(struct hexedit *buf, int c)
 		}
 		mvwaddch(buf->win, buf->cursor_y,
 			 ASCII_COL + buf->cursor_line_offset, c);
-		cursor_right(buf);
+		if (buf->cursor_x + 1 != ASCII_COL_END) {
+			cursor_right(buf);
+		} else {
+			cursor_down(buf);
+		}
 	} else {
 		if (!isxdigit(c)) {
 			return;
@@ -425,8 +439,12 @@ static void do_edit(struct hexedit *buf, int c)
 
 		if (buf->cursor_x + 1 != HEX_COL2_END) {
 			cursor_right(buf);
+		} else {
+			cursor_down(buf);
 		}
 	}
+
+	hexedit_refresh(buf);
 }
 
 void hexedit_driver(struct hexedit *buf, int c)
@@ -460,7 +478,7 @@ WERROR hexedit_resize_buffer(struct hexedit *buf, size_t newsz)
 {
 	/* reset the cursor if it'll be out of bounds
 	   after the resize */
-	if (buf->cursor_offset >= newsz) {
+	if (buf->cursor_offset > newsz) {
 		buf->cursor_y = 0;
 		buf->cursor_x = HEX_COL1;
 		buf->offset = 0;
@@ -472,12 +490,16 @@ WERROR hexedit_resize_buffer(struct hexedit *buf, size_t newsz)
 	if (newsz > buf->len) {
 		if (newsz > buf->alloc_size) {
 			uint8_t *d;
-			d = talloc_realloc(buf, buf->data, uint8_t, newsz);
+			buf->alloc_size *= 2;
+			if (newsz > buf->alloc_size) {
+				buf->alloc_size = newsz;
+			}
+			d = talloc_realloc(buf, buf->data, uint8_t,
+					   buf->alloc_size);
 			if (d == NULL) {
 				return WERR_NOMEM;
 			}
 			buf->data = d;
-			buf->alloc_size = newsz;
 		}
 		memset(buf->data + buf->len, '\0', newsz - buf->len);
 		buf->len = newsz;
